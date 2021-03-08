@@ -13,35 +13,35 @@ names(list_choices) <- paste(unique(Film$Time_code)[!is.na(unique(Film$Time_code
 # Define UI for application that draws a histogram
 ui <- navbarPage("First Shiny App",
                  tabPanel("Description of Dataset",
-                                  includeMarkdown("Description of Dataset Film.md")
+                          includeMarkdown("./Description of Dataset Film.md")
                  ), #  tabPanel
                  tabPanel("Summary of Dataset Film",
                           verbatimTextOutput("FilmSummary")
                  ),
-                 tabPanel("Histogram of Ratings",
+                 tabPanel("Histogram of Ratings by length",
                           fluidPage(
                               sidebarLayout(sidebarPanel(
-                                  selectInput("select", label = h3("Rating by Length of Film"), 
+                                  selectInput("select1", label = h3("Rating by Length of Film"), 
                                               choices = list_choices,
                                               selected = 1)
                               ), mainPanel(
                                   h3("Plot"),
-                                  plotOutput(outputId = "histog", click = "plot_click")                              )
-                              ))                 ),
+                                  plotOutput(outputId = "histog", click = "plot_click"))
+                              )
+                          )),
                  tabPanel("Rating by Length of Film",
                           fluidPage(
                               sidebarLayout(sidebarPanel(
-                                  selectInput("select", label = h3("Rating by Length of Film"), 
+                                  selectInput("select2", label = h3("Rating by Length of Film"), 
                                               choices = list_choices,
                                               selected = 1)
                               ), mainPanel(
                                   h3("Plot"),
-                                  plotOutput(outputId = "plot1", click = "plot_click")                              )
+                                  plotOutput(outputId = "plot1", click = "plot_click"))
                               ))),
                  tabPanel("Rating by Number of Casts of Film",
                           fluidPage(plotOutput(outputId = "plot2")
-                              )),
-                 useShinyjs()
+                          ))
 ) # navbarPage
 
 col_scale <- scale_colour_discrete(limits = list_choices)
@@ -53,17 +53,17 @@ server <- function(input, output) {
     output$FilmSummary<-renderPrint(summary(Film))
     
     output$plot1 <- renderPlot({
-        ggplot(Film %>% filter(Time_code == input$select)
-               , aes(Time_code, Rating, colour = Time_code)) +
+        ggplot(Film %>% filter(Time_code == input$select2),
+               aes(x=Rating)) +
             col_scale +
-            geom_point()
+            geom_density()
     })
     
     output$plot2 <- renderPlot({
         ggplot(Film)+geom_point(aes(Cast, Rating))
     })
     
-    output$histog <- renderPlot(hist(Film$Rating,main="Histogram of Ratings",xlab=input$select))
+    output$histog <- renderPlot(hist(Film %>%filter(Time_code == input$select1) %>% dplyr::select(Rating) %>% unlist(),main="Histogram of Ratings"))
     
     
     output$report <- downloadHandler(
@@ -93,6 +93,5 @@ server <- function(input, output) {
         }
     )
 }
-
 # Run the application 
 shinyApp(ui = ui, server = server)
